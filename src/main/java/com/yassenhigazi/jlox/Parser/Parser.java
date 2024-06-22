@@ -1,9 +1,12 @@
 package com.yassenhigazi.jlox.Parser;
 
+import com.yassenhigazi.jlox.Errors.EmptyAssignmentError;
+import com.yassenhigazi.jlox.Errors.ParseError;
 import com.yassenhigazi.jlox.JLox;
 import com.yassenhigazi.jlox.Scanner.Token;
 import com.yassenhigazi.jlox.Scanner.TokenType;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Parser {
@@ -15,16 +18,104 @@ public class Parser {
         this.tokens = tokens;
     }
 
-    public ASTExpression parse() {
+    public List<ASTStatement> parse() {
+        List<ASTStatement> statements = new ArrayList<>();
+
+        while (!isAtEnd()) {
+            statements.add(declaration());
+        }
+
+        return statements;
+    }
+
+    private ASTStatement declaration() {
         try {
-            return expression();
+            if (match(TokenType.VAR)) return varDeclaration();
+
+            return statement();
         } catch (ParseError error) {
+            synchronize();
+
             return null;
         }
     }
 
+    private ASTStatement varDeclaration() {
+        Token name = consume(TokenType.IDENTIFIER, "Expect variable name.");
+
+        ASTExpression initializer = null;
+
+        if (match(TokenType.EQUAL)) {
+            initializer = expression();
+        }
+
+        consume(TokenType.SEMICOLON, "Expect ';' after variable declaration.");
+
+        if (initializer == null)
+            throw new EmptyAssignmentError("Variable can not be empty. try var " + name.lexeme + " = nil;");
+
+        return new ASTStatement.Var(name, initializer);
+    }
+
+    private ASTStatement statement() {
+        if (match(TokenType.PRINT)) return printStatement();
+
+        if (match(TokenType.LEFT_BRACE)) return new ASTStatement.Block(block());
+
+        return expressionStatement();
+    }
+
+    private List<ASTStatement> block() {
+        List<ASTStatement> statements = new ArrayList<>();
+
+        while (!check(TokenType.RIGHT_BRACE) && !isAtEnd()) {
+            statements.add(declaration());
+        }
+
+        consume(TokenType.RIGHT_BRACE, "Expect '}' after block.");
+
+        return statements;
+    }
+
+    private ASTStatement printStatement() {
+        ASTExpression value = expression();
+
+        consume(TokenType.SEMICOLON, "Expect ';' after value.");
+
+        return new ASTStatement.Print(value);
+    }
+
+    private ASTStatement expressionStatement() {
+        ASTExpression expr = expression();
+
+        consume(TokenType.SEMICOLON, "Expect ';' after expression.");
+
+        return new ASTStatement.Expression(expr);
+    }
+
     private ASTExpression expression() {
-        return equality();
+        return assignment();
+    }
+
+    private ASTExpression assignment() {
+        ASTExpression expr = equality();
+
+        if (match(TokenType.EQUAL)) {
+            Token equals = previous();
+
+            ASTExpression value = assignment();
+
+            if (expr instanceof ASTExpression.Variable) {
+
+                Token name = ((ASTExpression.Variable) expr).name;
+
+                return new ASTExpression.Assign(name, value);
+            }
+
+            throw error(equals, "Invalid assignment target.");
+        }
+
+        return expr;
     }
 
     private ASTExpression equality() {
@@ -102,6 +193,10 @@ public class Parser {
 
         if (match(TokenType.NUMBER, TokenType.STRING)) {
             return new ASTExpression.Literal(previous().literal);
+        }
+
+        if (match(TokenType.IDENTIFIER)) {
+            return new ASTExpression.Variable(previous());
         }
 
         if (match(TokenType.LEFT_PAREN)) {
@@ -185,6 +280,4 @@ public class Parser {
         return tokens.get(current - 1);
     }
 
-    private static class ParseError extends RuntimeException {
-    }
 }

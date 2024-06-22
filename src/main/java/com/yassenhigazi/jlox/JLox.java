@@ -1,11 +1,12 @@
 package com.yassenhigazi.jlox;
 
-import com.yassenhigazi.jlox.Parser.ASTExpression;
+import com.yassenhigazi.jlox.Errors.RuntimeError;
+import com.yassenhigazi.jlox.Parser.ASTStatement;
+import com.yassenhigazi.jlox.Parser.Interpreter;
 import com.yassenhigazi.jlox.Parser.Parser;
 import com.yassenhigazi.jlox.Scanner.JLoxScanner;
 import com.yassenhigazi.jlox.Scanner.Token;
 import com.yassenhigazi.jlox.Scanner.TokenType;
-import com.yassenhigazi.jlox.Utils.ASTPrinter;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -16,7 +17,10 @@ import java.nio.file.Paths;
 import java.util.List;
 
 public class JLox {
+    private static final Interpreter interpreter = new Interpreter();
+
     static boolean hadError = false;
+    static boolean hadRuntimeError = false;
 
     public static void main(String[] args) throws IOException {
         if (args.length > 1) {
@@ -36,6 +40,7 @@ public class JLox {
 
         // exist if there is an error
         if (hadError) System.exit(65);
+        if (hadRuntimeError) System.exit(70);
     }
 
     private static void runPrompt() throws IOException {
@@ -58,24 +63,17 @@ public class JLox {
 
     private static void run(String source) {
         JLoxScanner scanner = new JLoxScanner(source);
+
         List<Token> tokens = scanner.scanTokens();
 
-        // For now, just print the tokens.
-//        for (Token token : tokens) {
-//            System.out.println(token);
-//        }
-
         Parser parser = new Parser(tokens);
-        ASTExpression expression = parser.parse();
+
+        List<ASTStatement> statements = parser.parse();
 
         // Stop if there was a syntax error.
         if (hadError) return;
 
-        System.out.println(new ASTPrinter().print(expression));
-    }
-
-    public static void error(int line, String message) {
-        error(line, 0, message);
+        interpreter.interpret(statements);
     }
 
     public static void error(int line, int column, String message) {
@@ -88,6 +86,12 @@ public class JLox {
         } else {
             report(token.line, " at '" + token.lexeme + "'", message);
         }
+    }
+
+    public static void runtimeError(RuntimeError error) {
+        System.err.println(error.getMessage() + "\n[line " + error.token.line + "]");
+
+        hadRuntimeError = true;
     }
 
     private static void report(int line, String where, String message) {

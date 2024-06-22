@@ -10,18 +10,22 @@ public class GenerateAST {
 
     public static void main(String[] args) throws IOException {
 
-        if (args.length != 1) {
-            System.err.println("Usage: generate_ast <output directory>");
-            System.exit(64);
-        }
-
-        String outputDir = args[0];
+        String outputDir = "./src/main/java/com/yassenhigazi/jlox/Parser";
 
         defineAst(outputDir, "ASTExpression", Arrays.asList(
                 "Binary   : ASTExpression left, Token operator, ASTExpression right",
                 "Grouping : ASTExpression expression",
                 "Literal  : Object value",
-                "Unary    : Token operator, ASTExpression right"
+                "Unary    : Token operator, ASTExpression right",
+                "Variable : Token name",
+                "Assign   : Token name, ASTExpression value"
+        ));
+
+        defineAst(outputDir, "ASTStatement", Arrays.asList(
+                "Block      : List<ASTStatement> statements",
+                "Expression : ASTExpression expression",
+                "Print      : ASTExpression expression",
+                "Var        : Token name, ASTExpression initializer"
         ));
     }
 
@@ -29,8 +33,9 @@ public class GenerateAST {
         String path = outputDir + "/" + baseName + ".java";
         PrintWriter writer = new PrintWriter(path, StandardCharsets.UTF_8);
 
-        writer.println("package com.yassenhigazi.jlox.Scanner;");
+        writer.println("package com.yassenhigazi.jlox.Parser;");
         writer.println();
+        writer.println("import com.yassenhigazi.jlox.Scanner.Token;");
         writer.println("import java.util.List;");
         writer.println();
         writer.println("public abstract class " + baseName + " {");

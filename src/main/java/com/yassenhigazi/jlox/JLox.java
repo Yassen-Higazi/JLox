@@ -44,13 +44,10 @@ public class JLox {
     }
 
     private static void runPrompt() throws IOException {
-        InputStreamReader input = new InputStreamReader(System.in);
-        BufferedReader reader = new BufferedReader(input);
-
         for (; ; ) {
             System.out.print("jlox> ");
 
-            String line = reader.readLine();
+            String line = readPrompt();
 
             if (line == null) break;
 
@@ -59,6 +56,32 @@ public class JLox {
 //            reset error flag so prompt doesn't end
             hadError = false;
         }
+    }
+
+    private static String readPrompt() throws IOException {
+        InputStreamReader input = new InputStreamReader(System.in);
+        BufferedReader reader = new BufferedReader(input);
+
+        StringBuilder source = new StringBuilder();
+
+        String line = reader.readLine();
+
+        source.append(line);
+
+        if (line == null) return null;
+
+        boolean isBlock = line.endsWith("{");
+        boolean isBlockClosed = false;
+
+        while (isBlock && !isBlockClosed) {
+            line = reader.readLine();
+
+            source.append(line);
+
+            isBlockClosed = line.endsWith("}");
+        }
+
+        return source.toString();
     }
 
     private static void run(String source) {
@@ -74,6 +97,10 @@ public class JLox {
         if (hadError) return;
 
         interpreter.interpret(statements);
+    }
+
+    public static void error(RuntimeError error) {
+        report(0, 0, "", error.getMessage());
     }
 
     public static void error(int line, int column, String message) {

@@ -3,7 +3,7 @@ package com.yassenhigazi.jlox.Parser;
 import com.yassenhigazi.jlox.Scanner.Token;
 
 public abstract class ASTExpression {
-
+    
     public abstract <R> R accept(Visitor<R> visitor);
 
     public interface Visitor<R> {
@@ -18,6 +18,8 @@ public abstract class ASTExpression {
         R visitVariableASTExpression(Variable expr);
 
         R visitAssignASTExpression(Assign expr);
+
+        R visitLogicalASTExpression(Logical expr);
     }
 
     public static class Binary extends ASTExpression {
@@ -102,6 +104,22 @@ public abstract class ASTExpression {
         @Override
         public <R> R accept(Visitor<R> visitor) {
             return visitor.visitAssignASTExpression(this);
+        }
+    }
+
+    public static class Logical extends ASTExpression {
+        public final ASTExpression left;
+        public final Token operator;
+        public final ASTExpression right;
+        public Logical(ASTExpression left, Token operator, ASTExpression right) {
+            this.left = left;
+            this.operator = operator;
+            this.right = right;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) {
+            return visitor.visitLogicalASTExpression(this);
         }
     }
 }

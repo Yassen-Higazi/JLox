@@ -109,7 +109,7 @@ public class JLox {
     }
 
     public static void error(RuntimeError error) {
-        report(0, 0, null, error.getMessage());
+        report(null, null, null, error.getMessage());
     }
 
     public static void error(int line, int column, String message) {
@@ -118,9 +118,9 @@ public class JLox {
 
     public static void error(Token token, String message) {
         if (token.type == TokenType.EOF) {
-            report(token.line, " at end", message);
+            report(token.line, null, " at end", message);
         } else {
-            report(token.line, " at '" + token.lexeme + "'", message);
+            report(token.line, null, " at '" + token.lexeme + "' ", message);
         }
     }
 
@@ -130,23 +130,19 @@ public class JLox {
         hadRuntimeError = true;
     }
 
-    private static void report(int line, String where, String message) {
-        report(line, line, where, message);
-    }
-
-    private static void report(int line, int column, String where, String message) {
+    private static void report(Integer line, Integer column, String where, String message) {
         String m = "";
 
-        if (line != 0) {
-            m = ("[line " + line);
+        if (line != null) {
+            m = "[line " + line;
         }
 
-        if (column != 0) {
+        if (column != null) {
             m = " at column " + column;
         }
 
-        if (line != 0) {
-            m += "]";
+        if (line != null) {
+            m += "] ";
         }
 
         if (where != null) {

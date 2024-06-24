@@ -5,6 +5,7 @@ import com.yassenhigazi.jlox.Errors.RuntimeError;
 import com.yassenhigazi.jlox.Errors.ZeroDivisionError;
 import com.yassenhigazi.jlox.JLox;
 import com.yassenhigazi.jlox.Scanner.Token;
+import com.yassenhigazi.jlox.Scanner.TokenType;
 
 import java.util.List;
 
@@ -172,6 +173,19 @@ public class Interpreter implements ASTExpression.Visitor<Object>, ASTStatement.
     }
 
     @Override
+    public Object visitLogicalASTExpression(ASTExpression.Logical expr) {
+        Object left = evaluate(expr.left);
+
+        if (expr.operator.type == TokenType.OR) {
+            if (isTruthy(left)) return left;
+        } else {
+            if (!isTruthy(left)) return left;
+        }
+
+        return evaluate(expr.right);
+    }
+
+    @Override
     public Void visitBlockASTStatement(ASTStatement.Block expr) {
         executeBlock(expr.statements, new Environment(environment));
 
@@ -203,6 +217,27 @@ public class Interpreter implements ASTExpression.Visitor<Object>, ASTStatement.
         }
 
         environment.define(statement.name.lexeme, value);
+
+        return null;
+    }
+
+    @Override
+    public Void visitWhileASTStatement(ASTStatement.While expr) {
+        
+        while (isTruthy(evaluate(expr.condition))) {
+            execute(expr.body);
+        }
+
+        return null;
+    }
+
+    @Override
+    public Void visitIfASTStatement(ASTStatement.If statement) {
+        if (isTruthy(evaluate(statement.condition))) {
+            execute(statement.thenBranch);
+        } else if (statement.elseBranch != null) {
+            execute(statement.elseBranch);
+        }
 
         return null;
     }

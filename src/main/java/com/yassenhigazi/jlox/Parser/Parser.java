@@ -58,11 +58,43 @@ public class Parser {
     }
 
     private ASTStatement statement() {
+        if (match(TokenType.IF)) return ifStatement();
         if (match(TokenType.PRINT)) return printStatement();
+        if (match(TokenType.WHILE)) return whileStatement();
 
         if (match(TokenType.LEFT_BRACE)) return new ASTStatement.Block(block());
 
         return expressionStatement();
+    }
+
+    private ASTStatement whileStatement() {
+        consume(TokenType.LEFT_PAREN, "Expect '(' after 'while'.");
+
+        ASTExpression condition = expression();
+
+        consume(TokenType.RIGHT_PAREN, "Expect ')' after condition.");
+        
+        ASTStatement body = statement();
+
+        return new ASTStatement.While(condition, body);
+    }
+
+    private ASTStatement ifStatement() {
+        consume(TokenType.LEFT_PAREN, "Expect '(' after 'if'.");
+
+        ASTExpression condition = expression();
+
+        consume(TokenType.RIGHT_PAREN, "Expect ')' after if condition.");
+
+        ASTStatement thenBranch = statement();
+
+        ASTStatement elseBranch = null;
+
+        if (match(TokenType.ELSE)) {
+            elseBranch = statement();
+        }
+
+        return new ASTStatement.If(condition, thenBranch, elseBranch);
     }
 
     private List<ASTStatement> block() {
@@ -98,7 +130,7 @@ public class Parser {
     }
 
     private ASTExpression assignment() {
-        ASTExpression expr = equality();
+        ASTExpression expr = or();
 
         if (match(TokenType.EQUAL)) {
             Token equals = previous();
@@ -117,6 +149,35 @@ public class Parser {
 
         return expr;
     }
+
+    private ASTExpression or() {
+        ASTExpression expr = and();
+
+        while (match(TokenType.OR)) {
+            Token operator = previous();
+
+            ASTExpression right = and();
+
+            expr = new ASTExpression.Logical(expr, operator, right);
+        }
+
+        return expr;
+    }
+
+    private ASTExpression and() {
+        ASTExpression expr = equality();
+
+        while (match(TokenType.AND)) {
+            Token operator = previous();
+
+            ASTExpression right = equality();
+
+            expr = new ASTExpression.Logical(expr, operator, right);
+        }
+
+        return expr;
+    }
+
 
     private ASTExpression equality() {
         ASTExpression expr = comparison();

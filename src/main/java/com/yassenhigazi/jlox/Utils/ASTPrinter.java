@@ -61,6 +61,11 @@ public class ASTPrinter implements ASTExpression.Visitor<String>, ASTStatement.V
         return "Assignment " + expr.name.lexeme + " = " + print(expr.value);
     }
 
+    @Override
+    public String visitLogicalASTExpression(ASTExpression.Logical expr) {
+        return print(expr.left) + " " + expr.operator.lexeme + " " + print(expr.right);
+    }
+
     private String parenthesize(String name, ASTExpression... expressions) {
         StringBuilder builder = new StringBuilder();
 
@@ -97,6 +102,23 @@ public class ASTPrinter implements ASTExpression.Visitor<String>, ASTStatement.V
         builder.append("var ").append(expr.name.lexeme);
 
         if (expr.initializer != null) builder.append(" = ").append(print(expr.initializer));
+
+        return builder.toString();
+    }
+
+    @Override
+    public String visitWhileASTStatement(ASTStatement.While expr) {
+
+        return "While (" + print(expr.condition) + ")" + "{" + print(expr.body) + "}";
+    }
+
+    @Override
+    public String visitIfASTStatement(ASTStatement.If expr) {
+        StringBuilder builder = new StringBuilder();
+
+        builder.append("if ").append(print(expr.condition));
+
+        if (expr.elseBranch != null) builder.append(" else ").append(print(expr.elseBranch));
 
         return builder.toString();
     }

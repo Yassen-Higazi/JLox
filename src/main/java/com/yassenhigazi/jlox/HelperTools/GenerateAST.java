@@ -18,14 +18,18 @@ public class GenerateAST {
                 "Literal  : Object value",
                 "Unary    : Token operator, ASTExpression right",
                 "Variable : Token name",
-                "Assign   : Token name, ASTExpression value"
+                "Assign   : Token name, ASTExpression value",
+                "Logical  : ASTExpression left, Token operator, ASTExpression right"
         ));
 
         defineAst(outputDir, "ASTStatement", Arrays.asList(
                 "Block      : List<ASTStatement> statements",
                 "Expression : ASTExpression expression",
                 "Print      : ASTExpression expression",
-                "Var        : Token name, ASTExpression initializer"
+                "Var        : Token name, ASTExpression initializer",
+                "While      : ASTExpression condition, ASTStatement body",
+                "If         : ASTExpression condition, ASTStatement thenBranch, ASTStatement elseBranch"
+
         ));
     }
 

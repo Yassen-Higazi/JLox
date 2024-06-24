@@ -52,7 +52,7 @@ public class Parser {
         consume(TokenType.SEMICOLON, "Expect ';' after variable declaration.");
 
         if (initializer == null)
-            JLox.error(new EmptyAssignmentError("Variable can not be empty. try var " + name.lexeme + " = nil;"));
+            throw new EmptyAssignmentError("Variable can not be empty. try var " + name.lexeme + " = nil;");
 
         return new ASTStatement.Var(name, initializer);
     }

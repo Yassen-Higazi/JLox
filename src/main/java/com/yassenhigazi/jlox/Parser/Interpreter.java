@@ -37,8 +37,7 @@ public class Interpreter implements ASTExpression.Visitor<Object>, ASTStatement.
                     return ((String) left).compareTo((String) right) > 0;
                 }
 
-                JLox.error(new RuntimeError(expr.operator, "Operands must be numbers or two strings."));
-                break;
+                throw new RuntimeError(expr.operator, "Operands must be numbers or two strings.");
 
             case GREATER_EQUAL:
                 if (left instanceof Double && right instanceof Double) {
@@ -49,8 +48,7 @@ public class Interpreter implements ASTExpression.Visitor<Object>, ASTStatement.
                     return ((String) left).compareTo((String) right) >= 0;
                 }
 
-                JLox.error(new RuntimeError(expr.operator, "Operands must be numbers or two strings."));
-                break;
+                throw new RuntimeError(expr.operator, "Operands must be numbers or two strings.");
 
             case LESS:
                 if (left instanceof Double && right instanceof Double) {
@@ -61,8 +59,7 @@ public class Interpreter implements ASTExpression.Visitor<Object>, ASTStatement.
                     return ((String) left).compareTo((String) right) < 0;
                 }
 
-                JLox.error(new RuntimeError(expr.operator, "Operands must be numbers or two strings."));
-                break;
+                throw new RuntimeError(expr.operator, "Operands must be numbers or two strings.");
 
             case LESS_EQUAL:
                 if (left instanceof Double && right instanceof Double) {
@@ -73,8 +70,7 @@ public class Interpreter implements ASTExpression.Visitor<Object>, ASTStatement.
                     return ((String) left).compareTo((String) right) <= 0;
                 }
 
-                JLox.error(new RuntimeError(expr.operator, "Operands must be numbers or two strings."));
-                break;
+                throw new RuntimeError(expr.operator, "Operands must be numbers or two strings.");
 
             case EQUAL_EQUAL:
                 if (left instanceof Double && right instanceof Double) {
@@ -85,8 +81,7 @@ public class Interpreter implements ASTExpression.Visitor<Object>, ASTStatement.
                     return ((String) left).compareTo((String) right) == 0;
                 }
 
-                JLox.error(new RuntimeError(expr.operator, "Operands must be numbers or two strings."));
-                break;
+                throw new RuntimeError(expr.operator, "Operands must be numbers or two strings.");
 
             case BANG_EQUAL:
                 if (left instanceof Double && right instanceof Double) {
@@ -97,8 +92,7 @@ public class Interpreter implements ASTExpression.Visitor<Object>, ASTStatement.
                     return ((String) left).compareTo((String) right) != 0;
                 }
 
-                JLox.error(new RuntimeError(expr.operator, "Operands must be numbers or two strings."));
-                break;
+                throw new RuntimeError(expr.operator, "Operands must be numbers or two strings.");
 
             case MINUS:
                 if (!validateNumberOperands(expr.operator, left, right)) break;
@@ -118,19 +112,17 @@ public class Interpreter implements ASTExpression.Visitor<Object>, ASTStatement.
                     return stringify(left) + stringify(right);
                 }
 
-                JLox.error(new RuntimeError(expr.operator, "Operands must be two numbers or two strings."));
-                break;
+                throw new RuntimeError(expr.operator, "Operands must be two numbers or two strings.");
 
             case SLASH:
                 if (left instanceof Double && right instanceof Double) {
                     if ((double) left == 0.0 || (double) right == 0.0)
-                        JLox.error(new ZeroDivisionError(expr.operator, "Can not Divide by zero."));
+                        throw new ZeroDivisionError(expr.operator, "Can not Divide by zero.");
 
                     return (double) left / (double) right;
                 }
 
-                JLox.error(new RuntimeError(expr.operator, "Operands must be two numbers."));
-                break;
+                throw new RuntimeError(expr.operator, "Operands must be two numbers.");
 
             case STAR:
                 if (!validateNumberOperands(expr.operator, left, right)) break;
@@ -250,9 +242,7 @@ public class Interpreter implements ASTExpression.Visitor<Object>, ASTStatement.
     private boolean validateNumberOperands(Token operator, Object left, Object right) {
         if (left instanceof Double && right instanceof Double) return true;
 
-        JLox.error(new RuntimeError(operator, "Operands must be numbers."));
-
-        return false;
+        throw new RuntimeError(operator, "Operands must be numbers.");
     }
 
     private String stringify(Object object) {

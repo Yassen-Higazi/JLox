@@ -36,7 +36,12 @@ public class JLox {
     private static void runFile(String path) throws IOException {
         byte[] bytes = Files.readAllBytes(Paths.get(path));
 
-        run(new String(bytes, Charset.defaultCharset()));
+        try {
+            run(new String(bytes, Charset.defaultCharset()));
+
+        } catch (RuntimeError e) {
+            error(e);
+        }
 
         // exist if there is an error
         if (hadError) System.exit(65);
@@ -51,9 +56,13 @@ public class JLox {
 
             if (line == null) break;
 
-            run(line);
+            try {
+                run(line);
+            } catch (RuntimeError e) {
+                error(e);
+            }
 
-//            reset error flag so prompt doesn't end
+            // reset error flag so prompt doesn't end
             hadError = false;
         }
     }
@@ -100,11 +109,11 @@ public class JLox {
     }
 
     public static void error(RuntimeError error) {
-        report(0, 0, "", error.getMessage());
+        report(0, 0, null, error.getMessage());
     }
 
     public static void error(int line, int column, String message) {
-        report(line, column, "", message);
+        report(line, column, null, message);
     }
 
     public static void error(Token token, String message) {
@@ -116,7 +125,7 @@ public class JLox {
     }
 
     public static void runtimeError(RuntimeError error) {
-        System.err.println(error.getMessage() + "\n[line " + error.token.line + "]");
+        System.err.println("\n[line " + error.token.line + "] " + error.getMessage());
 
         hadRuntimeError = true;
     }
@@ -126,11 +135,27 @@ public class JLox {
     }
 
     private static void report(int line, int column, String where, String message) {
-        String lineAndColumn = "[line " + line + (column != 0 ? column + "]" : "]");
+        String m = "";
 
-        String errMessage = "Error" + where + ": " + message;
+        if (line != 0) {
+            m = ("[line " + line);
+        }
 
-        System.err.println(lineAndColumn + " " + errMessage);
+        if (column != 0) {
+            m = " at column " + column;
+        }
+
+        if (line != 0) {
+            m += "]";
+        }
+
+        if (where != null) {
+            m += "Error at: " + where;
+        }
+
+        m += message;
+
+        System.err.println(m);
 
         hadError = true;
     }

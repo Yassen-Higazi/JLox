@@ -7,6 +7,7 @@ import com.yassenhigazi.jlox.Scanner.Token;
 import com.yassenhigazi.jlox.Scanner.TokenType;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Parser {
@@ -59,24 +60,13 @@ public class Parser {
 
     private ASTStatement statement() {
         if (match(TokenType.IF)) return ifStatement();
+        if (match(TokenType.FOR)) return forStatement();
         if (match(TokenType.PRINT)) return printStatement();
         if (match(TokenType.WHILE)) return whileStatement();
 
         if (match(TokenType.LEFT_BRACE)) return new ASTStatement.Block(block());
 
         return expressionStatement();
-    }
-
-    private ASTStatement whileStatement() {
-        consume(TokenType.LEFT_PAREN, "Expect '(' after 'while'.");
-
-        ASTExpression condition = expression();
-
-        consume(TokenType.RIGHT_PAREN, "Expect ')' after condition.");
-        
-        ASTStatement body = statement();
-
-        return new ASTStatement.While(condition, body);
     }
 
     private ASTStatement ifStatement() {
@@ -95,6 +85,64 @@ public class Parser {
         }
 
         return new ASTStatement.If(condition, thenBranch, elseBranch);
+    }
+
+    private ASTStatement forStatement() {
+        consume(TokenType.LEFT_PAREN, "Expect '(' after 'for'.");
+
+        ASTStatement initializer;
+
+        if (match(TokenType.SEMICOLON)) {
+            initializer = null;
+        } else if (match(TokenType.VAR)) {
+            initializer = varDeclaration();
+        } else {
+            initializer = expressionStatement();
+        }
+
+        ASTExpression condition = null;
+
+        if (!check(TokenType.SEMICOLON)) {
+            condition = expression();
+        }
+
+        consume(TokenType.SEMICOLON, "Expect ';' after loop condition.");
+
+        ASTExpression increment = null;
+
+        if (!check(TokenType.RIGHT_PAREN)) {
+            increment = expression();
+        }
+
+        consume(TokenType.RIGHT_PAREN, "Expect ')' after for clauses.");
+
+        ASTStatement body = statement();
+
+        if (increment != null) {
+            body = new ASTStatement.Block(Arrays.asList(body, new ASTStatement.Expression(increment)));
+        }
+
+        if (condition == null) condition = new ASTExpression.Literal(true);
+
+        body = new ASTStatement.While(condition, body);
+
+        if (initializer != null) {
+            body = new ASTStatement.Block(Arrays.asList(initializer, body));
+        }
+
+        return body;
+    }
+
+    private ASTStatement whileStatement() {
+        consume(TokenType.LEFT_PAREN, "Expect '(' after 'while'.");
+
+        ASTExpression condition = expression();
+
+        consume(TokenType.RIGHT_PAREN, "Expect ')' after condition.");
+
+        ASTStatement body = statement();
+
+        return new ASTStatement.While(condition, body);
     }
 
     private List<ASTStatement> block() {

@@ -4,6 +4,7 @@ import com.yassenhigazi.jlox.Errors.RuntimeError;
 import com.yassenhigazi.jlox.Interpreter.Interpreter;
 import com.yassenhigazi.jlox.Parser.ASTStatement;
 import com.yassenhigazi.jlox.Parser.Parser;
+import com.yassenhigazi.jlox.Resolver.Resolver;
 import com.yassenhigazi.jlox.Scanner.JLoxScanner;
 import com.yassenhigazi.jlox.Scanner.Token;
 import com.yassenhigazi.jlox.Scanner.TokenType;
@@ -103,6 +104,13 @@ public class JLox {
         List<ASTStatement> statements = parser.parse();
 
         // Stop if there was a syntax error.
+        if (hadError) return;
+
+        Resolver resolver = new Resolver(interpreter);
+
+        resolver.resolve(statements);
+
+        // Stop if there was a resolution error.
         if (hadError) return;
 
         interpreter.interpret(statements);

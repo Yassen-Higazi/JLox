@@ -12,12 +12,14 @@ import com.yassenhigazi.jlox.Scanner.Token;
 import com.yassenhigazi.jlox.Scanner.TokenType;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Interpreter implements ASTExpression.Visitor<Object>, ASTStatement.Visitor<Void> {
 
     final Environment globals = new Environment();
-
+    private final Map<ASTExpression, Integer> locals = new HashMap<>();
     private Environment environment = globals;
 
     public void interpret(List<ASTStatement> statements) {
@@ -193,12 +195,21 @@ public class Interpreter implements ASTExpression.Visitor<Object>, ASTStatement.
 
     @Override
     public Object visitVariableASTExpression(ASTExpression.Variable expr) {
-        return environment.get(expr.name);
+        return lookUpVariable(expr.name, expr);
     }
 
     @Override
     public Object visitAssignASTExpression(ASTExpression.Assign expr) {
         Object value = evaluate(expr.value);
+        
+        Integer distance = locals.get(expr);
+
+        if (distance != null) {
+            environment.assignAt(distance, expr.name, value);
+        } else {
+            globals.assign(expr.name, value);
+        }
+
 
         environment.assign(expr.name, value);
 
@@ -345,5 +356,19 @@ public class Interpreter implements ASTExpression.Visitor<Object>, ASTStatement.
         }
 
         return object.toString();
+    }
+
+    public void resolve(ASTExpression expr, int depth) {
+        locals.put(expr, depth);
+    }
+
+    private Object lookUpVariable(Token name, ASTExpression expr) {
+        Integer distance = locals.get(expr);
+
+        if (distance != null) {
+            return environment.getAt(distance, name.lexeme);
+        } else {
+            return globals.get(name);
+        }
     }
 }

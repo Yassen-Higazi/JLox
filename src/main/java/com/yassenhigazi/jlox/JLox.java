@@ -1,8 +1,8 @@
 package com.yassenhigazi.jlox;
 
 import com.yassenhigazi.jlox.Errors.RuntimeError;
+import com.yassenhigazi.jlox.Interpreter.Interpreter;
 import com.yassenhigazi.jlox.Parser.ASTStatement;
-import com.yassenhigazi.jlox.Parser.Interpreter;
 import com.yassenhigazi.jlox.Parser.Parser;
 import com.yassenhigazi.jlox.Scanner.JLoxScanner;
 import com.yassenhigazi.jlox.Scanner.Token;

@@ -1,19 +1,28 @@
-package com.yassenhigazi.jlox.Parser;
+package com.yassenhigazi.jlox.Interpreter;
 
 import com.yassenhigazi.jlox.Environment.Environment;
+import com.yassenhigazi.jlox.Errors.NotCallableError;
+import com.yassenhigazi.jlox.Errors.Return;
 import com.yassenhigazi.jlox.Errors.RuntimeError;
 import com.yassenhigazi.jlox.Errors.ZeroDivisionError;
 import com.yassenhigazi.jlox.JLox;
+import com.yassenhigazi.jlox.Parser.ASTExpression;
+import com.yassenhigazi.jlox.Parser.ASTStatement;
 import com.yassenhigazi.jlox.Scanner.Token;
 import com.yassenhigazi.jlox.Scanner.TokenType;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Interpreter implements ASTExpression.Visitor<Object>, ASTStatement.Visitor<Void> {
 
-    private Environment environment = new Environment();
+    final Environment globals = new Environment();
+
+    private Environment environment = globals;
 
     public void interpret(List<ASTStatement> statements) {
+        globals.define("clock", new ClockMethod());
+
         try {
             for (ASTStatement statement : statements) {
                 execute(statement);
@@ -135,6 +144,30 @@ public class Interpreter implements ASTExpression.Visitor<Object>, ASTStatement.
     }
 
     @Override
+    public Object visitCallASTExpression(ASTExpression.Call expr) {
+        Object callee = evaluate(expr.callee);
+
+        if (!(callee instanceof LoxCallable)) {
+            throw new NotCallableError(expr.paren, "Can only call functions and classes.");
+        }
+
+        List<Object> arguments = new ArrayList<>();
+
+        for (ASTExpression argument : expr.arguments) {
+            arguments.add(evaluate(argument));
+        }
+
+        //noinspection PatternVariableCanBeUsed
+        LoxCallable function = (LoxCallable) callee;
+
+        if (arguments.size() != function.arity()) {
+            throw new RuntimeError(expr.paren, "Expected " + function.arity() + " arguments but got " + arguments.size() + ".");
+        }
+
+        return function.call(this, arguments);
+    }
+
+    @Override
     public Object visitGroupingASTExpression(ASTExpression.Grouping expr) {
         return evaluate(expr.expression);
     }
@@ -200,12 +233,30 @@ public class Interpreter implements ASTExpression.Visitor<Object>, ASTStatement.
     }
 
     @Override
+    public Void visitFunctionASTStatement(ASTStatement.Function statement) {
+        LoxFunction function = new LoxFunction(statement, environment);
+
+        environment.define(statement.name.lexeme, function);
+
+        return null;
+    }
+
+    @Override
     public Void visitPrintASTStatement(ASTStatement.Print statement) {
         Object value = evaluate(statement.expression);
 
         System.out.println(stringify(value));
 
         return null;
+    }
+
+    @Override
+    public Void visitReturnASTStatement(ASTStatement.Return statement) {
+        Object value = null;
+
+        if (statement.value != null) value = evaluate(statement.value);
+
+        throw new Return(value);
     }
 
     @Override
@@ -223,7 +274,7 @@ public class Interpreter implements ASTExpression.Visitor<Object>, ASTStatement.
 
     @Override
     public Void visitWhileASTStatement(ASTStatement.While expr) {
-        
+
         while (isTruthy(evaluate(expr.condition))) {
             execute(expr.body);
         }
@@ -250,7 +301,7 @@ public class Interpreter implements ASTExpression.Visitor<Object>, ASTStatement.
         stmt.accept(this);
     }
 
-    private void executeBlock(List<ASTStatement> statements, Environment environment) {
+    void executeBlock(List<ASTStatement> statements, Environment environment) {
         Environment previous = this.environment;
 
         try {

@@ -31,6 +31,7 @@ public class Parser {
 
     private ASTStatement declaration() {
         try {
+            if (match(TokenType.FUN)) return function("function");
             if (match(TokenType.VAR)) return varDeclaration();
 
             return statement();
@@ -39,6 +40,35 @@ public class Parser {
 
             return null;
         }
+    }
+
+    private ASTStatement.Function function(String kind) {
+        Token name = consume(TokenType.IDENTIFIER, "Expect " + kind + " name.");
+
+        consume(TokenType.LEFT_PAREN, "Expect '(' after " + kind + " name.");
+
+        List<Token> parameters = new ArrayList<>();
+
+        if (!check(TokenType.RIGHT_PAREN)) {
+
+            do {
+
+                if (parameters.size() >= 255) {
+                    throw error(peek(), "Can't have more than 255 parameters.");
+                }
+
+                parameters.add(consume(TokenType.IDENTIFIER, "Expect parameter name."));
+
+            } while (match(TokenType.COMMA));
+        }
+
+        consume(TokenType.RIGHT_PAREN, "Expect ')' after parameters.");
+
+        consume(TokenType.LEFT_BRACE, "Expect '{' before " + kind + " body.");
+
+        List<ASTStatement> body = block();
+
+        return new ASTStatement.Function(name, parameters, body);
     }
 
     private ASTStatement varDeclaration() {
@@ -62,6 +92,7 @@ public class Parser {
         if (match(TokenType.IF)) return ifStatement();
         if (match(TokenType.FOR)) return forStatement();
         if (match(TokenType.PRINT)) return printStatement();
+        if (match(TokenType.RETURN)) return returnStatement();
         if (match(TokenType.WHILE)) return whileStatement();
 
         if (match(TokenType.LEFT_BRACE)) return new ASTStatement.Block(block());
@@ -131,6 +162,20 @@ public class Parser {
         }
 
         return body;
+    }
+
+    private ASTStatement returnStatement() {
+        Token keyword = previous();
+
+        ASTExpression value = null;
+
+        if (!check(TokenType.SEMICOLON)) {
+            value = expression();
+        }
+
+        consume(TokenType.SEMICOLON, "Expect ';' after return value.");
+
+        return new ASTStatement.Return(keyword, value);
     }
 
     private ASTStatement whileStatement() {
@@ -290,7 +335,39 @@ public class Parser {
             return new ASTExpression.Unary(operator, right);
         }
 
-        return primary();
+        return call();
+    }
+
+    private ASTExpression call() {
+        ASTExpression expr = primary();
+
+        while (true) {
+            if (match(TokenType.LEFT_PAREN)) {
+                expr = finishCall(expr);
+            } else {
+                break;
+            }
+        }
+
+        return expr;
+    }
+
+    private ASTExpression finishCall(ASTExpression callee) {
+        List<ASTExpression> arguments = new ArrayList<>();
+
+        if (!check(TokenType.RIGHT_PAREN)) {
+            do {
+                if (arguments.size() >= 255) {
+                    throw error(peek(), "Can't have more than 255 arguments.");
+                }
+
+                arguments.add(expression());
+            } while (match(TokenType.COMMA));
+        }
+
+        Token paren = consume(TokenType.RIGHT_PAREN, "Expect ')' after arguments.");
+
+        return new ASTExpression.Call(callee, paren, arguments);
     }
 
     private ASTExpression primary() {

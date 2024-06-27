@@ -5,7 +5,6 @@ import com.yassenhigazi.jlox.Scanner.Token;
 import java.util.List;
 
 public abstract class ASTStatement {
-  
     public abstract <R> R accept(Visitor<R> visitor);
 
     public interface Visitor<R> {
@@ -13,7 +12,11 @@ public abstract class ASTStatement {
 
         R visitExpressionASTStatement(Expression expr);
 
+        R visitFunctionASTStatement(Function expr);
+
         R visitPrintASTStatement(Print expr);
+
+        R visitReturnASTStatement(Return expr);
 
         R visitVarASTStatement(Var expr);
 
@@ -48,6 +51,22 @@ public abstract class ASTStatement {
         }
     }
 
+    public static class Function extends ASTStatement {
+        public final Token name;
+        public final List<Token> params;
+        public final List<ASTStatement> body;
+        public Function(Token name, List<Token> params, List<ASTStatement> body) {
+            this.name = name;
+            this.params = params;
+            this.body = body;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) {
+            return visitor.visitFunctionASTStatement(this);
+        }
+    }
+
     public static class Print extends ASTStatement {
         public final ASTExpression expression;
 
@@ -58,6 +77,21 @@ public abstract class ASTStatement {
         @Override
         public <R> R accept(Visitor<R> visitor) {
             return visitor.visitPrintASTStatement(this);
+        }
+    }
+
+    public static class Return extends ASTStatement {
+        public final Token keyword;
+        public final ASTExpression value;
+
+        public Return(Token keyword, ASTExpression value) {
+            this.keyword = keyword;
+            this.value = value;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) {
+            return visitor.visitReturnASTStatement(this);
         }
     }
 

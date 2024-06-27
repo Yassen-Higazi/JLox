@@ -3,11 +3,22 @@ package com.yassenhigazi.jlox.Utils;
 
 import com.yassenhigazi.jlox.Parser.ASTExpression;
 import com.yassenhigazi.jlox.Parser.ASTStatement;
+import com.yassenhigazi.jlox.Scanner.Token;
 
 import java.util.List;
 
 @SuppressWarnings("unused")
 public class ASTPrinter implements ASTExpression.Visitor<String>, ASTStatement.Visitor<String> {
+
+    public String printExpressions(List<ASTExpression> exprs) {
+        StringBuilder result = new StringBuilder();
+
+        for (ASTExpression expr : exprs) {
+            result.append(this.print(expr));
+        }
+
+        return result.toString();
+    }
 
     public String print(ASTExpression expr) {
         return expr.accept(this);
@@ -32,6 +43,11 @@ public class ASTPrinter implements ASTExpression.Visitor<String>, ASTStatement.V
     @Override
     public String visitBinaryASTExpression(ASTExpression.Binary expr) {
         return parenthesize(expr.operator.lexeme, expr.left, expr.right);
+    }
+
+    @Override
+    public String visitCallASTExpression(ASTExpression.Call expr) {
+        return "function" + print(expr.callee) + "(" + printExpressions(expr.arguments) + ")";
     }
 
     @Override
@@ -91,8 +107,31 @@ public class ASTPrinter implements ASTExpression.Visitor<String>, ASTStatement.V
     }
 
     @Override
+    public String visitFunctionASTStatement(ASTStatement.Function expr) {
+        StringBuilder builder = new StringBuilder();
+
+        builder.append("fun ")
+                .append(expr.name.lexeme)
+                .append("<");
+
+        for (Token param : expr.params) {
+            builder.append(param.lexeme)
+                    .append(", ");
+        }
+
+        builder.append(">");
+
+        return builder.toString();
+    }
+
+    @Override
     public String visitPrintASTStatement(ASTStatement.Print expr) {
         return "print " + print(expr.expression);
+    }
+
+    @Override
+    public String visitReturnASTStatement(ASTStatement.Return expr) {
+        return "return " + print(expr.value);
     }
 
     @Override

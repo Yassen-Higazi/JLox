@@ -2,12 +2,15 @@ package com.yassenhigazi.jlox.Parser;
 
 import com.yassenhigazi.jlox.Scanner.Token;
 
+import java.util.List;
+
 public abstract class ASTExpression {
-    
     public abstract <R> R accept(Visitor<R> visitor);
 
     public interface Visitor<R> {
         R visitBinaryASTExpression(Binary expr);
+
+        R visitCallASTExpression(Call expr);
 
         R visitGroupingASTExpression(Grouping expr);
 
@@ -35,6 +38,22 @@ public abstract class ASTExpression {
         @Override
         public <R> R accept(Visitor<R> visitor) {
             return visitor.visitBinaryASTExpression(this);
+        }
+    }
+
+    public static class Call extends ASTExpression {
+        public final ASTExpression callee;
+        public final Token paren;
+        public final List<ASTExpression> arguments;
+        public Call(ASTExpression callee, Token paren, List<ASTExpression> arguments) {
+            this.callee = callee;
+            this.paren = paren;
+            this.arguments = arguments;
+        }
+
+        @Override
+        public <R> R accept(Visitor<R> visitor) {
+            return visitor.visitCallASTExpression(this);
         }
     }
 

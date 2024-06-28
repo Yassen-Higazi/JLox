@@ -206,6 +206,23 @@ public class Interpreter implements ASTExpression.Visitor<Object>, ASTStatement.
     }
 
     @Override
+    public Object visitSuperASTExpression(ASTExpression.Super expr) {
+        int distance = locals.get(expr);
+
+        LoxClass superclass = (LoxClass) environment.getAt(distance, "super");
+
+        LoxInstance object = (LoxInstance) environment.getAt(distance - 1, "this");
+
+        LoxFunction method = superclass.findMethod(expr.method.lexeme);
+
+        if (method == null) {
+            throw new RuntimeError(expr.method, "Undefined property '" + expr.method.lexeme + "'.");
+        }
+
+        return method.bind(object);
+    }
+
+    @Override
     public Object visitThisASTExpression(ASTExpression.This expr) {
         return lookUpVariable(expr.keyword, expr);
     }
@@ -269,7 +286,22 @@ public class Interpreter implements ASTExpression.Visitor<Object>, ASTStatement.
 
     @Override
     public Void visitClassASTStatement(ASTStatement.Class classStatement) {
+        Object superclass = null;
+
+        if (classStatement.superclass != null) {
+            superclass = evaluate(classStatement.superclass);
+
+            if (!(superclass instanceof LoxClass)) {
+                throw new RuntimeError(classStatement.superclass.name, "Superclass must be a class.");
+            }
+        }
+
         environment.define(classStatement.name.lexeme, null);
+
+        if (classStatement.superclass != null) {
+            environment = new Environment(environment);
+            environment.define("super", superclass);
+        }
 
         Map<String, LoxFunction> methods = new HashMap<>();
 
@@ -279,8 +311,13 @@ public class Interpreter implements ASTExpression.Visitor<Object>, ASTStatement.
             methods.put(method.name.lexeme, function);
         }
 
-        LoxClass klass = new LoxClass(classStatement.name.lexeme, methods);
+        LoxClass klass = new LoxClass(classStatement.name.lexeme, (LoxClass) superclass, methods);
 
+        if (superclass != null) {
+            environment = environment.enclosing;
+        }
+
+        assert environment != null;
         environment.assign(classStatement.name, klass);
 
         return null;

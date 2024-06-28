@@ -19,6 +19,7 @@ public class GenerateAST {
                 "Grouping : ASTExpression expression",
                 "Literal  : Object value",
                 "Set      : ASTExpression object, Token name, ASTExpression value",
+                "Super    : Token keyword, Token method",
                 "This     : Token keyword",
                 "Unary    : Token operator, ASTExpression right",
                 "Variable : Token name",
@@ -28,7 +29,7 @@ public class GenerateAST {
 
         defineAst(outputDir, "ASTStatement", Arrays.asList(
                 "Block      : List<ASTStatement> statements",
-                "Class      : Token name, List<ASTStatement.Function> methods",
+                "Class      : Token name, ASTExpression.Variable superclass, List<ASTStatement.Function> methods",
                 "Expression : ASTExpression expression",
                 "Function   : Token name, List<Token> params, List<ASTStatement> body",
                 "Print      : ASTExpression expression",

@@ -73,6 +73,11 @@ public class ASTPrinter implements ASTExpression.Visitor<String>, ASTStatement.V
     }
 
     @Override
+    public String visitSuperASTExpression(ASTExpression.Super expr) {
+        return "super." + expr.method.lexeme + "()";
+    }
+
+    @Override
     public String visitThisASTExpression(ASTExpression.This expr) {
         return expr.keyword.lexeme;
     }
@@ -118,7 +123,7 @@ public class ASTPrinter implements ASTExpression.Visitor<String>, ASTStatement.V
 
     @Override
     public String visitClassASTStatement(ASTStatement.Class expr) {
-        return "<Class " + expr.name.lexeme + " >";
+        return "<Class " + expr.name.lexeme + "<" + print(expr.superclass) + " >";
     }
 
     @Override

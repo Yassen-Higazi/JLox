@@ -46,6 +46,14 @@ public class Parser {
     private ASTStatement classDeclaration() {
         Token name = consume(TokenType.IDENTIFIER, "Expect class name.");
 
+        ASTExpression.Variable superclass = null;
+
+        if (match(TokenType.LESS)) {
+            consume(TokenType.IDENTIFIER, "Expect superclass name.");
+
+            superclass = new ASTExpression.Variable(previous());
+        }
+
         consume(TokenType.LEFT_BRACE, "Expect '{' before class body.");
 
         List<ASTStatement.Function> methods = new ArrayList<>();
@@ -56,7 +64,7 @@ public class Parser {
 
         consume(TokenType.RIGHT_BRACE, "Expect '}' after class body.");
 
-        return new ASTStatement.Class(name, methods);
+        return new ASTStatement.Class(name, superclass, methods);
     }
 
     private ASTStatement.Function function(String kind) {
@@ -403,6 +411,16 @@ public class Parser {
 
         if (match(TokenType.NUMBER, TokenType.STRING)) {
             return new ASTExpression.Literal(previous().literal);
+        }
+
+        if (match(TokenType.SUPER)) {
+            Token keyword = previous();
+
+            consume(TokenType.DOT, "Expect '.' after 'super'.");
+
+            Token method = consume(TokenType.IDENTIFIER, "Expect superclass method name.");
+            
+            return new ASTExpression.Super(keyword, method);
         }
 
         if (match(TokenType.THIS)) return new ASTExpression.This(previous());

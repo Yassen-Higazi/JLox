@@ -5,10 +5,12 @@ import java.util.Map;
 
 public class LoxClass implements LoxCallable {
     final String name;
+    final LoxClass superclass;
     private final Map<String, LoxFunction> methods;
 
     @SuppressWarnings("ClassEscapesDefinedScope")
-    public LoxClass(String name, Map<String, LoxFunction> methods) {
+    public LoxClass(String name, LoxClass superclass, Map<String, LoxFunction> methods) {
+        this.superclass = superclass;
         this.name = name;
         this.methods = methods;
     }
@@ -30,6 +32,10 @@ public class LoxClass implements LoxCallable {
     LoxFunction findMethod(String name) {
         if (methods.containsKey(name)) {
             return methods.get(name);
+        }
+
+        if (superclass != null) {
+            return superclass.findMethod(name);
         }
 
         return null;

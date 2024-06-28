@@ -80,8 +80,22 @@ public class Resolver implements ASTExpression.Visitor<Void>, ASTStatement.Visit
     }
 
     @Override
+    public Void visitSuperASTExpression(ASTExpression.Super expr) {
+        if (currentClass == ClassType.NONE) {
+            JLox.error(expr.keyword, "Can't use 'super' outside of a class.");
+        } else if (currentClass != ClassType.SUBCLASS) {
+            JLox.error(expr.keyword, "Can't use 'super' in a class with no superclass.");
+        }
+
+        resolveLocal(expr, expr.keyword);
+        
+        return null;
+    }
+
+    @Override
     public Void visitThisASTExpression(ASTExpression.This expr) {
         resolveLocal(expr, expr.keyword);
+
         return null;
     }
 
@@ -140,7 +154,22 @@ public class Resolver implements ASTExpression.Visitor<Void>, ASTStatement.Visit
 
         define(classStatement.name);
 
+        if (classStatement.superclass != null) {
+            if (classStatement.name.lexeme.equals(classStatement.superclass.name.lexeme)) {
+                JLox.error(classStatement.superclass.name, "A class can't inherit from itself.");
+            } else {
+                currentClass = ClassType.SUBCLASS;
+                resolve(classStatement.superclass);
+            }
+        }
+
+        if (classStatement.superclass != null) {
+            beginScope();
+            scopes.peek().put("super", true);
+        }
+
         beginScope();
+
         scopes.peek().put("this", true);
 
         for (ASTStatement.Function method : classStatement.methods) {
@@ -154,6 +183,9 @@ public class Resolver implements ASTExpression.Visitor<Void>, ASTStatement.Visit
         }
 
         endScope();
+
+        if (classStatement.superclass != null) endScope();
+
 
         currentClass = enclosingClass;
 
@@ -192,7 +224,7 @@ public class Resolver implements ASTExpression.Visitor<Void>, ASTStatement.Visit
         }
 
         if (statement.value != null) {
-            
+
             if (currentFunction == FunctionType.INITIALIZER) {
                 JLox.error(statement.keyword, "Can't return a value from an initializer.");
             }

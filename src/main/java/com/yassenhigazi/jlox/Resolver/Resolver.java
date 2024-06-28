@@ -14,6 +14,7 @@ import java.util.Stack;
 public class Resolver implements ASTExpression.Visitor<Void>, ASTStatement.Visitor<Void> {
     private final Interpreter interpreter;
     private final Stack<Map<String, Boolean>> scopes = new Stack<>();
+    private ClassType currentClass = ClassType.NONE;
     private FunctionType currentFunction = FunctionType.NONE;
 
     public Resolver(Interpreter interpreter) {
@@ -53,6 +54,12 @@ public class Resolver implements ASTExpression.Visitor<Void>, ASTStatement.Visit
     }
 
     @Override
+    public Void visitGetASTExpression(ASTExpression.Get expr) {
+        resolve(expr.object);
+        return null;
+    }
+
+    @Override
     public Void visitGroupingASTExpression(ASTExpression.Grouping expr) {
         resolve(expr.expression);
         return null;
@@ -60,6 +67,21 @@ public class Resolver implements ASTExpression.Visitor<Void>, ASTStatement.Visit
 
     @Override
     public Void visitLiteralASTExpression(ASTExpression.Literal expr) {
+        return null;
+    }
+
+    @Override
+    public Void visitSetASTExpression(ASTExpression.Set expr) {
+        resolve(expr.value);
+
+        resolve(expr.object);
+
+        return null;
+    }
+
+    @Override
+    public Void visitThisASTExpression(ASTExpression.This expr) {
+        resolveLocal(expr, expr.keyword);
         return null;
     }
 
@@ -109,6 +131,36 @@ public class Resolver implements ASTExpression.Visitor<Void>, ASTStatement.Visit
     }
 
     @Override
+    public Void visitClassASTStatement(ASTStatement.Class classStatement) {
+        ClassType enclosingClass = currentClass;
+
+        currentClass = ClassType.CLASS;
+
+        declare(classStatement.name);
+
+        define(classStatement.name);
+
+        beginScope();
+        scopes.peek().put("this", true);
+
+        for (ASTStatement.Function method : classStatement.methods) {
+            FunctionType declaration = FunctionType.METHOD;
+
+            if (method.name.lexeme.equals("init")) {
+                declaration = FunctionType.INITIALIZER;
+            }
+
+            resolveFunction(method, declaration);
+        }
+
+        endScope();
+
+        currentClass = enclosingClass;
+
+        return null;
+    }
+
+    @Override
     public Void visitExpressionASTStatement(ASTStatement.Expression statement) {
         resolve(statement.expression);
 
@@ -140,6 +192,11 @@ public class Resolver implements ASTExpression.Visitor<Void>, ASTStatement.Visit
         }
 
         if (statement.value != null) {
+            
+            if (currentFunction == FunctionType.INITIALIZER) {
+                JLox.error(statement.keyword, "Can't return a value from an initializer.");
+            }
+
             resolve(statement.value);
         }
 
@@ -190,14 +247,14 @@ public class Resolver implements ASTExpression.Visitor<Void>, ASTStatement.Visit
     }
 
     private void beginScope() {
-        scopes.push(new HashMap<String, Boolean>());
+        scopes.push(new HashMap<>());
     }
 
     private void endScope() {
         scopes.pop();
     }
 
-    private void resolveFunction(ASTStatement.Function function, FunctionType type) {
+    private void resolveFunction(ASTStatement.Function function, @SuppressWarnings("SameParameterValue") FunctionType type) {
 
         FunctionType enclosingFunction = currentFunction;
 

@@ -170,6 +170,17 @@ public class Interpreter implements ASTExpression.Visitor<Object>, ASTStatement.
     }
 
     @Override
+    public Object visitGetASTExpression(ASTExpression.Get expr) {
+        Object object = evaluate(expr.object);
+
+        if (object instanceof LoxInstance) {
+            return ((LoxInstance) object).get(expr.name);
+        }
+
+        throw new RuntimeError(expr.name, "Only instances have properties.");
+    }
+
+    @Override
     public Object visitGroupingASTExpression(ASTExpression.Grouping expr) {
         return evaluate(expr.expression);
     }
@@ -177,6 +188,26 @@ public class Interpreter implements ASTExpression.Visitor<Object>, ASTStatement.
     @Override
     public Object visitLiteralASTExpression(ASTExpression.Literal expr) {
         return expr.value;
+    }
+
+    @Override
+    public Object visitSetASTExpression(ASTExpression.Set expr) {
+        Object object = evaluate(expr.object);
+
+        if (!(object instanceof LoxInstance)) {
+            throw new RuntimeError(expr.name, "Only instances have fields.");
+        }
+
+        Object value = evaluate(expr.value);
+
+        ((LoxInstance) object).set(expr.name, value);
+
+        return value;
+    }
+
+    @Override
+    public Object visitThisASTExpression(ASTExpression.This expr) {
+        return lookUpVariable(expr.keyword, expr);
     }
 
     @Override
@@ -201,7 +232,7 @@ public class Interpreter implements ASTExpression.Visitor<Object>, ASTStatement.
     @Override
     public Object visitAssignASTExpression(ASTExpression.Assign expr) {
         Object value = evaluate(expr.value);
-        
+
         Integer distance = locals.get(expr);
 
         if (distance != null) {
@@ -237,6 +268,25 @@ public class Interpreter implements ASTExpression.Visitor<Object>, ASTStatement.
     }
 
     @Override
+    public Void visitClassASTStatement(ASTStatement.Class classStatement) {
+        environment.define(classStatement.name.lexeme, null);
+
+        Map<String, LoxFunction> methods = new HashMap<>();
+
+        for (ASTStatement.Function method : classStatement.methods) {
+            LoxFunction function = new LoxFunction(method, environment, method.name.lexeme.equals("init"));
+
+            methods.put(method.name.lexeme, function);
+        }
+
+        LoxClass klass = new LoxClass(classStatement.name.lexeme, methods);
+
+        environment.assign(classStatement.name, klass);
+
+        return null;
+    }
+
+    @Override
     public Void visitExpressionASTStatement(ASTStatement.Expression statement) {
         evaluate(statement.expression);
 
@@ -245,7 +295,7 @@ public class Interpreter implements ASTExpression.Visitor<Object>, ASTStatement.
 
     @Override
     public Void visitFunctionASTStatement(ASTStatement.Function statement) {
-        LoxFunction function = new LoxFunction(statement, environment);
+        LoxFunction function = new LoxFunction(statement, environment, false);
 
         environment.define(statement.name.lexeme, function);
 

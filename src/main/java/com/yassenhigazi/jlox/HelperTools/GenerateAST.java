@@ -15,8 +15,11 @@ public class GenerateAST {
         defineAst(outputDir, "ASTExpression", Arrays.asList(
                 "Binary   : ASTExpression left, Token operator, ASTExpression right",
                 "Call     : ASTExpression callee, Token paren, List<ASTExpression> arguments",
+                "Get      : ASTExpression object, Token name",
                 "Grouping : ASTExpression expression",
                 "Literal  : Object value",
+                "Set      : ASTExpression object, Token name, ASTExpression value",
+                "This     : Token keyword",
                 "Unary    : Token operator, ASTExpression right",
                 "Variable : Token name",
                 "Assign   : Token name, ASTExpression value",
@@ -25,6 +28,7 @@ public class GenerateAST {
 
         defineAst(outputDir, "ASTStatement", Arrays.asList(
                 "Block      : List<ASTStatement> statements",
+                "Class      : Token name, List<ASTStatement.Function> methods",
                 "Expression : ASTExpression expression",
                 "Function   : Token name, List<Token> params, List<ASTStatement> body",
                 "Print      : ASTExpression expression",

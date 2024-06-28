@@ -51,6 +51,11 @@ public class ASTPrinter implements ASTExpression.Visitor<String>, ASTStatement.V
     }
 
     @Override
+    public String visitGetASTExpression(ASTExpression.Get expr) {
+        return print(expr.object) + "." + expr.name.lexeme;
+    }
+
+    @Override
     public String visitGroupingASTExpression(ASTExpression.Grouping expr) {
         return parenthesize("group", expr.expression);
     }
@@ -60,6 +65,16 @@ public class ASTPrinter implements ASTExpression.Visitor<String>, ASTStatement.V
         if (expr.value == null) return "nil";
 
         return expr.value.toString();
+    }
+
+    @Override
+    public String visitSetASTExpression(ASTExpression.Set expr) {
+        return "Set " + print(expr.object) + "." + expr.name.lexeme + " = " + print(expr.value);
+    }
+
+    @Override
+    public String visitThisASTExpression(ASTExpression.This expr) {
+        return expr.keyword.lexeme;
     }
 
     @Override
@@ -99,6 +114,11 @@ public class ASTPrinter implements ASTExpression.Visitor<String>, ASTStatement.V
     @Override
     public String visitBlockASTStatement(ASTStatement.Block expr) {
         return print(expr.statements);
+    }
+
+    @Override
+    public String visitClassASTStatement(ASTStatement.Class expr) {
+        return "<Class " + expr.name.lexeme + " >";
     }
 
     @Override

@@ -31,6 +31,7 @@ public class Environment {
         Environment environment = this;
 
         for (int i = 0; i < distance; i++) {
+            assert environment != null;
             environment = environment.enclosing;
         }
 

@@ -31,6 +31,7 @@ public class Parser {
 
     private ASTStatement declaration() {
         try {
+            if (match(TokenType.CLASS)) return classDeclaration();
             if (match(TokenType.FUN)) return function("function");
             if (match(TokenType.VAR)) return varDeclaration();
 
@@ -40,6 +41,22 @@ public class Parser {
 
             return null;
         }
+    }
+
+    private ASTStatement classDeclaration() {
+        Token name = consume(TokenType.IDENTIFIER, "Expect class name.");
+
+        consume(TokenType.LEFT_BRACE, "Expect '{' before class body.");
+
+        List<ASTStatement.Function> methods = new ArrayList<>();
+
+        while (!check(TokenType.RIGHT_BRACE) && !isAtEnd()) {
+            methods.add(function("method"));
+        }
+
+        consume(TokenType.RIGHT_BRACE, "Expect '}' after class body.");
+
+        return new ASTStatement.Class(name, methods);
     }
 
     private ASTStatement.Function function(String kind) {
@@ -235,6 +252,9 @@ public class Parser {
                 Token name = ((ASTExpression.Variable) expr).name;
 
                 return new ASTExpression.Assign(name, value);
+            } else if (expr instanceof ASTExpression.Get get) {
+
+                return new ASTExpression.Set(get.object, get.name, value);
             }
 
             throw error(equals, "Invalid assignment target.");
@@ -344,6 +364,10 @@ public class Parser {
         while (true) {
             if (match(TokenType.LEFT_PAREN)) {
                 expr = finishCall(expr);
+            } else if (match(TokenType.DOT)) {
+                Token name = consume(TokenType.IDENTIFIER, "Expect property name after '.'.");
+
+                expr = new ASTExpression.Get(expr, name);
             } else {
                 break;
             }
@@ -380,6 +404,8 @@ public class Parser {
         if (match(TokenType.NUMBER, TokenType.STRING)) {
             return new ASTExpression.Literal(previous().literal);
         }
+
+        if (match(TokenType.THIS)) return new ASTExpression.This(previous());
 
         if (match(TokenType.IDENTIFIER)) {
             return new ASTExpression.Variable(previous());

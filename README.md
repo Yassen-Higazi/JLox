@@ -26,13 +26,12 @@ the syntax and grammar for JLox is defined in the book.
 
 ### variables
 
-```js
+```
 var n = 5.5;
 var str = "Hello";
 var bool = true;
 
-print
-str + "World!";
+print str + "World!";
 ```
 
 ### Functions
@@ -45,8 +44,7 @@ fun makeCounter()
     fun count()
     {
         i = i + 1;
-        print
-        i;
+        print i;
     }
 
     return count;
@@ -67,7 +65,7 @@ class Bacon {
     }
 }
 
-Bacon().eat(); //
+Bacon().eat(); // Crunch crunch crunch!
 
 class Doughnut {
     cook() {
@@ -76,10 +74,9 @@ class Doughnut {
 }
 
 // Inheritance
-class BostonCream < Doughnut {
-}
+class BostonCream < Doughnut {}
 
-BostonCream().cook();
+BostonCream().cook(); // "Fry until golden brown.
 
 class Person {
     sayName() {
